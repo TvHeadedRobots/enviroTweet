@@ -6,7 +6,6 @@
 #include <SPI.h>
 #endif
 #include <Ethernet.h>
-#include <EthernetDNS.h>
 #include <Twitter.h>
 #include <Wire.h>
 #include "RTClib.h"
@@ -40,8 +39,8 @@ DallasTemperature sensors(&oneWire);
 
 // Ethernet setup
 byte mac[] = { 0x90, 0xA2, 0xDA, 0x00, 0x59, 0x6E };
-byte ip[] = { 192, 168, 11, 15 };
-byte gateway[] = { 192, 168, 11, 1 };
+byte ip[] = { 10, 0, 1, 15 };
+byte gateway[] = { 10, 0, 1, 1 };
 byte subnet[] = { 255, 255, 255, 0 };
 
 //DNS server setup
@@ -91,7 +90,7 @@ void loop(void)
 
   lcd.print("Temp 1: ");
   lcd.print(tempF);
-  lcd.write(0);
+  lcd.write(1);
   
   char msg[40]; 
   sprintf(msg, "The temp on %d/%d/%d at %d:%02d:%02d is %d", now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second(), tempF);
