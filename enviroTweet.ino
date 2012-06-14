@@ -1,9 +1,10 @@
+#include <util.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #if defined(ARDUINO) && ARDUINO > 18
-#include <SPI.h>
+  #include <SPI.h>
 #endif
 #include <Ethernet.h>
 #include <Twitter.h>
@@ -39,23 +40,21 @@ DallasTemperature sensors(&oneWire);
 
 // Ethernet setup
 byte mac[] = { 0x90, 0xA2, 0xDA, 0x00, 0x59, 0x6E };
-byte ip[] = { 10, 0, 1, 15 };
-byte gateway[] = { 10, 0, 1, 1 };
-byte subnet[] = { 255, 255, 255, 0 };
-
-//DNS server setup
-byte dnsServerIp[] = { 192, 168, 11, 51};
+byte ip[] = { 192, 168, 1, 101 };
+//byte gateway[] = { 192, 168, 1, 1 };
+//byte subnet[] = { 255, 255, 255, 0 };
 
 // Twitter setup
 Twitter twitter("360833566-8eVR5Aom4D6WFs1IFDLmZpzD6QJbAD1FVOwvikwu"); // Twitter API token
 
 // Global Vars
-int counter = 0;
+int counter = 100;
 
 void setup(void)
 {  
   // start ethernet
-  Ethernet.begin(mac, ip, gateway, subnet);
+  //Ethernet.begin(mac, ip, gateway, subnet);
+  Ethernet.begin(mac, ip);
   
   // start serial port
   Serial.begin(57600);
@@ -77,7 +76,7 @@ void loop(void)
   DateTime now = RTC.now();
   
   char greeting[30];
-  sprintf(greeting, "%d:%02d on %d/%d/%d", now.hour(), now.minute(), now.month(), now.day(), now.year());
+  sprintf(greeting, "%d:%02d %d/%d/%d", now.hour(), now.minute(), now.month(), now.day(), now.year());
   Serial.println(greeting);
   
   lcd.createChar(1, degChar);
@@ -102,7 +101,7 @@ void loop(void)
   lcd.print(greeting);
  
  // This conditions watches an counter that is incremented every 30 seconds in the loop and posts to Twitter when the counter value is reached. i.e. 10 = 5 mins 
- if(counter == 10) { 
+ if(counter >= 10) { 
     char msg[40]; 
     sprintf(msg, "The temp on %d/%d/%d at %d:%02d:%02d is %d", now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second(), tempF);
     //char msg[] = "is nebody home.....";
