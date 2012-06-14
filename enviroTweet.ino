@@ -60,7 +60,7 @@ void setup(void)
   RTC.begin();
   // Start up the Dallas temp sensor library
   sensors.begin();
-  Serial.println("Hello world, I am enviroTweet.");
+  Serial.println("Hello, I am enviroTweet.");
   if (! RTC.isrunning()) {
     Serial.println("RTC is NOT running!");
     // following line sets the RTC to the date & time this sketch was compiled
@@ -72,8 +72,11 @@ void setup(void)
 void loop(void)
 { 
   DateTime now = RTC.now();
+  char greeting[30];
+  sprintf(greeting, "%d/%d/%d at %d:%02d:%02d", now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second());
+  Serial.println(greeting);
   
-  lcd.createChar(0, degChar);
+  lcd.createChar(1, degChar);
   lcd.begin(16, 2);
   
   int tempF = 0; //temp var 
@@ -91,6 +94,22 @@ void loop(void)
   lcd.print("Temp 1: ");
   lcd.print(tempF);
   lcd.write(1);
+  lcd.setCursor(0, 2);
+  lcd.print(greeting);
+  
+  for (int positionCounter = 0; positionCounter <= 5; positionCounter++) {
+    // scroll one position left:
+    lcd.scrollDisplayLeft();
+    delay(100);  
+  }
+  
+  delay(3000);
+  
+  for (int positionCounter = 0; positionCounter <= 5; positionCounter++) {
+    // scroll one position left:
+    lcd.scrollDisplayRight();
+    delay(100);  
+  }  
   
   char msg[40]; 
   sprintf(msg, "The temp on %d/%d/%d at %d:%02d:%02d is %d", now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second(), tempF);
