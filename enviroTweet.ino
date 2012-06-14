@@ -49,6 +49,9 @@ byte dnsServerIp[] = { 192, 168, 11, 51};
 // Twitter setup
 Twitter twitter("360833566-8eVR5Aom4D6WFs1IFDLmZpzD6QJbAD1FVOwvikwu"); // Twitter API token
 
+// Global Vars
+int counter = 0;
+
 void setup(void)
 {  
   // start ethernet
@@ -72,8 +75,9 @@ void setup(void)
 void loop(void)
 { 
   DateTime now = RTC.now();
+  
   char greeting[30];
-  sprintf(greeting, "%d/%d/%d at %d:%02d:%02d", now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second());
+  sprintf(greeting, "%d:%02d on %d/%d/%d", now.hour(), now.minute(), now.month(), now.day(), now.year());
   Serial.println(greeting);
   
   lcd.createChar(1, degChar);
@@ -96,38 +100,28 @@ void loop(void)
   lcd.write(1);
   lcd.setCursor(0, 2);
   lcd.print(greeting);
-  
-  for (int positionCounter = 0; positionCounter <= 5; positionCounter++) {
-    // scroll one position left:
-    lcd.scrollDisplayLeft();
-    delay(100);  
-  }
-  
-  delay(3000);
-  
-  for (int positionCounter = 0; positionCounter <= 5; positionCounter++) {
-    // scroll one position left:
-    lcd.scrollDisplayRight();
-    delay(100);  
-  }  
-  
-  char msg[40]; 
-  sprintf(msg, "The temp on %d/%d/%d at %d:%02d:%02d is %d", now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second(), tempF);
-  //char msg[] = "is nebody home.....";
-  
-  Serial.println("connecting to Twitter...");
-  if (twitter.post(msg)) {
-    int status = twitter.wait(&Serial);
-    if (status == 200) {
-      Serial.println("OK.");
+ 
+ // This conditions watches an counter that is incremented every 30 seconds in the loop and posts to Twitter when the counter value is reached. i.e. 10 = 5 mins 
+ if(counter == 10) { 
+    char msg[40]; 
+    sprintf(msg, "The temp on %d/%d/%d at %d:%02d:%02d is %d", now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second(), tempF);
+    //char msg[] = "is nebody home.....";
+        
+    Serial.println("connecting to Twitter...");
+    if (twitter.post(msg)) {
+      int status = twitter.wait(&Serial);
+      if (status == 200) {
+        Serial.println("OK.");
+      } else {
+        Serial.print("failed : code ");
+        Serial.println(status);
+      }
     } else {
-      Serial.print("failed : code ");
-      Serial.println(status);
+      Serial.println("connection failed.");
     }
-  } else {
-    Serial.println("connection failed.");
-  }
-  
-  delay(500000); //wait for next post
-  
+    
+    counter = 0;
+ }
+  delay(30000); //wait for next post
+  counter ++;
 }
