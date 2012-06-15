@@ -110,12 +110,6 @@ void loop(void)
   tempF = (sensors.getTempCByIndex(0) + 40) * 9 / 5 - 40; //C to F conversion
   Serial.print("Temperature for Device 1 is: ");
   Serial.println(tempF);
-
-  lcd.print("Temp 1: ");
-  lcd.print(tempF);
-  lcd.write(1);
-  lcd.setCursor(0, 2);
-  lcd.print(lcdClock);
  
    // This conditions watches an counter that is incremented every 30 seconds in the loop and posts to Twitter when the counter value is reached. i.e. 10 = 5 mins 
    if(counter >= 10) { 
@@ -129,16 +123,37 @@ void loop(void)
        int status = twitter.wait(&Serial);
        if (status == 200) {
          Serial.println("OK.");
-       } else {
+         lcd.setCursor(0, 0);
+         lcd.print("Log to Twitter");
+         lcd.setCursor(4, 1);
+         lcd.print("Success!");
+         delay(5000);
+       } 
+       else {
          Serial.print("failed : code ");
          Serial.println(status);
+         lcd.setCursor(0, 0);
+         lcd.print("Logging to Twitter");
+         lcd.setCursor(0, 1);
+         lcd.print("Fail!" + status);
+         delay(5000);         
        }
-     } else {
+     } 
+     else {
        Serial.println("connection failed.");
      }
       
       counter = 0;
    }
+  
+  // Write the LCD display
+  lcd.setCursor(0, 0); 
+  lcd.print("Temp 1: ");
+  lcd.print(tempF);
+  lcd.write(1);
+  lcd.print("     ");
+  lcd.setCursor(0, 1);
+  lcd.print(lcdClock);   
    
   delay(30000); //wait for next update
   counter ++;
