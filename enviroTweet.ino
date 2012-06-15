@@ -1,3 +1,9 @@
+/*
+  enviroTweet
+  By: Skip Tabor, 2012
+  
+  A simple enviornmental monitoring platform using Twitter as it's logging an monitoring interface.
+*/
 #include <util.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -12,7 +18,7 @@
 #include "RTClib.h"
 #include <LiquidCrystal.h>
 
-// initialize the library with the numbers of the interface pins
+// initialize the LCD library with the numbers of the interface pins
 LiquidCrystal lcd(3, 5, 6, 7, 8, 9);
 // create degree symbol character
 byte degChar[8] = {
@@ -38,31 +44,41 @@ OneWire oneWire(ONE_WIRE_BUS);
 // Pass our oneWire reference to Dallas Temperature. 
 DallasTemperature sensors(&oneWire);
 
-// Ethernet setup
+// Ethernet stuff
 byte mac[] = { 0x90, 0xA2, 0xDA, 0x00, 0x59, 0x6E };
-byte ip[] = { 192, 168, 1, 101 };
-//byte gateway[] = { 192, 168, 1, 1 };
-//byte subnet[] = { 255, 255, 255, 0 };
+IPAddress ip(192, 168, 1, 101);
 
-// Twitter setup
+// Twitter OAuth token
 Twitter twitter("360833566-8eVR5Aom4D6WFs1IFDLmZpzD6QJbAD1FVOwvikwu"); // Twitter API token
 
 // Global Vars
-int counter = 100;
+int counter = 99; // a loop counter
+int tempF = 0; // temp var 
 
+// Setup
 void setup(void)
 {  
-  // start ethernet
-  //Ethernet.begin(mac, ip, gateway, subnet);
-  Ethernet.begin(mac, ip);
+
+  Serial.begin(57600);  // init serial port
+  Wire.begin();  // init OneWire
+  RTC.begin();  // init RTC
+  sensors.begin();  // init up the Dallas temp sensor library
   
-  // start serial port
-  Serial.begin(57600);
-  Wire.begin();
-  RTC.begin();
-  // Start up the Dallas temp sensor library
-  sensors.begin();
-  Serial.println("Hello, I am enviroTweet.");
+  Serial.println();
+  Serial.println("Hello, I am enviroTweet.");  //introduce yourself
+  
+  // Setup & start Ethernet
+  Serial.println("Attempting to use DHCP...");
+  
+  // if DHCP fails, start with a hard-coded address:  
+  if (!Ethernet.begin(mac)) {
+    Serial.println("DHCP failed, trying static IP");
+    Ethernet.begin(mac, ip);
+  }
+  Serial.print("IP Address: ");
+  Serial.println(Ethernet.localIP());
+    
+  // check the RTC & set current time  
   if (! RTC.isrunning()) {
     Serial.println("RTC is NOT running!");
     // following line sets the RTC to the date & time this sketch was compiled
@@ -73,16 +89,17 @@ void setup(void)
 
 void loop(void)
 { 
-  DateTime now = RTC.now();
+  DateTime now = RTC.now(); // set DateTime object to current RTC data/time
   
-  char greeting[30];
-  sprintf(greeting, "%d:%02d %d/%d/%d", now.hour(), now.minute(), now.month(), now.day(), now.year());
-  Serial.println(greeting);
+  lcd.createChar(1, degChar); // init the degree character for the LCD
+  lcd.begin(16, 2); // init the LCD
   
-  lcd.createChar(1, degChar);
-  lcd.begin(16, 2);
+  // setup a date/time char array for use with LCD and console
+  char lcdClock[16];
+  sprintf(lcdClock, "%d:%02d %d/%d/%d", now.hour(), now.minute(), now.month(), now.day(), now.year());
+  Serial.print("Current Time: ");
+  Serial.println(lcdClock);
   
-  int tempF = 0; //temp var 
   // call sensors.requestTemperatures() to issue a global temperature 
   // request to all devices on the bus
   Serial.print("Requesting temperatures...");
@@ -98,29 +115,31 @@ void loop(void)
   lcd.print(tempF);
   lcd.write(1);
   lcd.setCursor(0, 2);
-  lcd.print(greeting);
+  lcd.print(lcdClock);
  
- // This conditions watches an counter that is incremented every 30 seconds in the loop and posts to Twitter when the counter value is reached. i.e. 10 = 5 mins 
- if(counter >= 10) { 
-    char msg[40]; 
-    sprintf(msg, "The temp on %d/%d/%d at %d:%02d:%02d is %d", now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second(), tempF);
-    //char msg[] = "is nebody home.....";
-        
-    Serial.println("connecting to Twitter...");
-    if (twitter.post(msg)) {
-      int status = twitter.wait(&Serial);
-      if (status == 200) {
-        Serial.println("OK.");
-      } else {
-        Serial.print("failed : code ");
-        Serial.println(status);
-      }
-    } else {
-      Serial.println("connection failed.");
-    }
-    
-    counter = 0;
- }
-  delay(30000); //wait for next post
+   // This conditions watches an counter that is incremented every 30 seconds in the loop and posts to Twitter when the counter value is reached. i.e. 10 = 5 mins 
+   if(counter >= 10) { 
+      
+     char msg[40]; 
+     sprintf(msg, "The temp on %d/%d/%d at %d:%02d:%02d is %d", now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second(), tempF); // build the tweet
+     
+     // Do the Twitter stuff     
+     Serial.println("connecting to Twitter...");
+     if (twitter.post(msg)) {
+       int status = twitter.wait(&Serial);
+       if (status == 200) {
+         Serial.println("OK.");
+       } else {
+         Serial.print("failed : code ");
+         Serial.println(status);
+       }
+     } else {
+       Serial.println("connection failed.");
+     }
+      
+      counter = 0;
+   }
+   
+  delay(30000); //wait for next update
   counter ++;
 }
